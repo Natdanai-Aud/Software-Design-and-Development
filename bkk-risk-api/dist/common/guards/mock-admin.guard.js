@@ -18,7 +18,7 @@ let MockAdminGuard = class MockAdminGuard {
         const token = auth.substring('Bearer '.length).trim();
         const expected = process.env.ADMIN_MOCK_TOKEN ?? 'mock-admin-token';
         if (!token || token !== expected) {
-            throw new common_1.ForbiddenException('โทเคนไม่ถูกต้องหรือหมดอายุ');
+            throw new common_1.UnauthorizedException('โทเคนไม่ถูกต้องหรือหมดอายุ');
         }
         return true;
     }

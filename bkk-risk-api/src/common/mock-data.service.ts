@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   Bottleneck,
   RankingEntry,
@@ -10,11 +10,6 @@ import {
   RemediationStatus,
   RiskLevel,
 } from './enums';
-import { KmlRiskPointSource } from './kml-risk-point-source.service';
-import { RiskStatistics, deriveRiskStatistics } from './risk-statistics';
-import { withPdfDetails } from '../data/risk-point-pdf-details';
-import { remediationPdfDetails } from '../data/remediation-pdf-details';
-import { buildRemediationsFromPdfDetails } from './remediation-pdf-matcher';
 
 function seedRiskPoints(): RiskPoint[] {
   const districts = [
@@ -33,7 +28,17 @@ function seedRiskPoints(): RiskPoint[] {
   const points: RiskPoint[] = Array.from({ length: 100 }, (_, index) => {
     const rank = index + 1;
     const district = districts[index % districts.length];
-    const statistics: RiskStatistics = deriveRiskStatistics(rank);
+    const accidents = Math.max(58, 420 - index * 3);
+    const fatalities = Math.max(1, 12 - Math.floor(index / 12));
+    const injuries = Math.max(40, 390 - index * 3);
+    const riskLevel =
+      accidents >= 300
+        ? RiskLevel.CRITICAL
+        : accidents >= 220
+          ? RiskLevel.HIGH
+          : accidents >= 130
+            ? RiskLevel.MEDIUM
+            : RiskLevel.LOW;
 
     return {
       riskPointId: `RP-${String(rank).padStart(3, '0')}`,
@@ -43,14 +48,42 @@ function seedRiskPoints(): RiskPoint[] {
       road: `ถนนจำลองสาย ${rank}`,
       lat: 13.70 + (index % 20) * 0.008,
       lng: 100.47 + (index % 20) * 0.007,
-      accidentCount: statistics.accidentCount,
-      fatalities: statistics.fatalities,
-      injuries: statistics.injuries,
-      riskLevel: statistics.riskLevel,
+      accidentCount: accidents,
+      fatalities,
+      injuries,
+      riskLevel,
       dataYearRange: '2566-2568',
       causes: [],
       solutions: [],
     };
+  });
+
+  Object.assign(points[0], {
+    nameTh: 'แยกรัชดา-ลาดพร้าว',
+    district: 'จตุจักร',
+    road: 'ถนนรัชดาภิเษก',
+    lat: 13.8065,
+    lng: 100.5745,
+    accidentCount: 412,
+    fatalities: 9,
+    injuries: 388,
+    riskLevel: RiskLevel.CRITICAL,
+    causes: [
+      {
+        description: 'ทัศนวิสัยบริเวณทางแยกถูกบดบังด้วยตอม่อรถไฟฟ้า',
+        sourceDocument: '660201-solutions-1-20.pdf',
+      },
+      {
+        description: 'รถจักรยานยนต์ย้อนศรบริเวณจุดกลับรถ',
+        sourceDocument: '660201-solutions-1-20.pdf',
+      },
+    ],
+    solutions: [
+      {
+        description: 'ติดตั้งกระจกโค้งและไฟส่องสว่างเพิ่มบริเวณทางแยก',
+        sourceDocument: '660201-solutions-1-20.pdf',
+      },
+    ],
   });
 
   Object.assign(points[6], {
@@ -77,11 +110,14 @@ function seedRiskPoints(): RiskPoint[] {
     riskLevel: RiskLevel.HIGH,
   });
 
-  return withPdfDetails(points);
+  return points;
 }
 
-function seedManualRemediations(): Remediation[] {
-  return [
+@Injectable()
+export class MockDataService {
+  private readonly _riskPoints: RiskPoint[] = seedRiskPoints();
+
+  private readonly _remediations: Remediation[] = [
     {
       remediationId: 'RM-001',
       riskPointId: 'RP-001',
@@ -116,27 +152,6 @@ function seedManualRemediations(): Remediation[] {
       updatedAt: '2026-08-01T10:00:00+07:00',
     },
   ];
-}
-
-@Injectable()
-export class MockDataService implements OnModuleInit {
-  private _riskPoints: RiskPoint[] = seedRiskPoints();
-  private _remediations: Remediation[] = seedManualRemediations();
-
-  constructor(private readonly kmlRiskPointSource: KmlRiskPointSource) {}
-
-  async onModuleInit() {
-    const points = await this.kmlRiskPointSource.fetchRiskPoints();
-    if (points && points.length > 0) {
-      this._riskPoints = withPdfDetails(points);
-    }
-
-    const pdfRemediations = buildRemediationsFromPdfDetails(
-      remediationPdfDetails,
-      this._riskPoints,
-    );
-    this._remediations = [...this._remediations, ...pdfRemediations];
-  }
 
   private readonly _bottlenecks: Bottleneck[] = [
     {

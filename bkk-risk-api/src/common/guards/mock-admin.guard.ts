@@ -1,7 +1,6 @@
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -21,7 +20,7 @@ export class MockAdminGuard implements CanActivate {
     const expected = process.env.ADMIN_MOCK_TOKEN ?? 'mock-admin-token';
 
     if (!token || token !== expected) {
-      throw new ForbiddenException('โทเคนไม่ถูกต้องหรือหมดอายุ');
+      throw new UnauthorizedException('โทเคนไม่ถูกต้องหรือหมดอายุ');
     }
 
     return true;
