@@ -17,7 +17,11 @@ export class MockAdminGuard implements CanActivate {
     }
 
     const token = auth.substring('Bearer '.length).trim();
-    const expected = process.env.ADMIN_MOCK_TOKEN ?? 'mock-admin-token';
+    const expected = process.env.ADMIN_MOCK_TOKEN;
+
+    if (!expected) {
+      throw new UnauthorizedException('ไม่พบการตั้งค่า ADMIN_MOCK_TOKEN ในระบบ');
+    }
 
     if (!token || token !== expected) {
       throw new UnauthorizedException('โทเคนไม่ถูกต้องหรือหมดอายุ');

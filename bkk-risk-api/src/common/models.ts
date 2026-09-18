@@ -1,5 +1,4 @@
 import {
-  CongestionLevel,
   ImportSource,
   RemediationStatus,
   RiskLevel,
@@ -56,9 +55,12 @@ export interface Bottleneck {
   road?: string;
   lat: number;
   lng: number;
-  congestionLevel: CongestionLevel;
-  avgSpeedKmh?: number;
-  observedAt: string;
+  /** สภาพเส้นทางข้ามจากชุดข้อมูล crosswalk_50 (ปกติ / ต้องปรับปรุง / ... ) */
+  crossMarking: string | null;
+  /** ประเภททางข้าม เช่น Thermo */
+  cType: string | null;
+  /** จำนวนช่องจราจร */
+  numLane: number | null;
 }
 
 export interface ImportResult {

@@ -176,31 +176,40 @@
                   "dataYearRange": "2566-2568",
                   "causes": [
                     {
-                      "description": "ทัศนวิสัยบริเวณทางแยกถูกบดบังด้วยตอม่อรถไฟฟ้า",
-                      "sourceDocument": "660201-solutions-1-20.pdf"
+                      "description": "อุบัติเหตุจากการวิ่งตัด Lane จราจร",
+                      "sourceDocument": "660628-solutions-1-20.pdf"
                     },
                     {
-                      "description": "รถจักรยานยนต์ย้อนศรบริเวณจุดกลับรถ",
-                      "sourceDocument": "660201-solutions-1-20.pdf"
+                      "description": "ความสว่างบริเวณใต้สะพาน มีปริมาณที่น้อย",
+                      "sourceDocument": "660628-solutions-1-20.pdf"
+                    },
+                    {
+                      "description": "อุปกรณ์ความปลอดภัย เป็นรูปแบบชั่วคราว",
+                      "sourceDocument": "660628-solutions-1-20.pdf"
                     }
                   ],
                   "solutions": [
                     {
-                      "description": "ติดตั้งกระจกโค้งและไฟส่องสว่างเพิ่มบริเวณทางแยก",
-                      "sourceDocument": "660201-solutions-1-20.pdf"
+                      "description": "ติดตั้งกรวย หรือ Plastic barrier ชั่วคราวเพื่อป้องกันการเกิดอุบัติเหตุจากการวิ่งตัด Lane จราจร",
+                      "sourceDocument": "660628-solutions-1-20.pdf"
+                    },
+                    {
+                      "description": "ตรวจสอบความสว่างบริเวณใต้สะพาน เนื่องจากอยู่ระหว่างการก่อสร้างรถไฟฟ้าสายสีเหลือง เส้นจราจร/ป้ายอาจเกิดการชำรุดจากการก่อสร้าง เพราะฉะนั้นความสว่างในช่วงกลางคืนจึงจำเป็นต้องมีเพียงพอต่อการจราจร",
+                      "sourceDocument": "660628-solutions-1-20.pdf"
+                    },
+                    {
+                      "description": "เนื่องจากอยู่ระหว่างการก่อสร้างรถไฟฟ้าสายสีส้ม การติดตั้งอุปกรณ์ความปลอดภัยจึงอยู่ในรูปแบบชั่วคราว",
+                      "sourceDocument": "660628-solutions-1-20.pdf"
                     }
                   ],
                   "remediation": {
-                    "remediationId": "RM-001",
+                    "remediationId": "RM-PDF-001",
                     "riskPointId": "RP-001",
-                    "status": "IN_PROGRESS",
-                    "isDelayed": true,
+                    "status": "COMPLETED",
                     "responsibleAgency": "สำนักการจราจรและขนส่ง",
-                    "startedAt": "2026-03-10",
-                    "dueAt": "2026-06-30",
-                    "completedAt": null,
-                    "note": "รอผลการจัดซื้อจัดจ้างอุปกรณ์ไฟส่องสว่าง",
-                    "updatedAt": "2026-07-28T14:05:00+07:00"
+                    "completedAt": "2026-04-22",
+                    "note": "ติดตั้งสัญญาณไฟคนข้ามแบบกดปุ่มแล้วเสร็จ",
+                    "updatedAt": "2026-04-21T17:00:00.000Z"
                   }
                 }
               }
@@ -215,7 +224,7 @@
         "operationId": "RemediationController_findAll",
         "tags": ["remediation"],
         "summary": "ติดตามสถานะการแก้ไขของทุกจุดเสี่ยง",
-        "description": "รองรับ use case ติดตามการแก้ไข ตาม Activity Diagram ระบบต้องแยกงานที่ล่าช้าออกจากงานปกติ — ใช้ query `delayed=true` เพื่อดึงเฉพาะงานล่าช้า (หน้าจอแสดงผลด้วยสีแดง)",
+        "description": "รองรับ use case ติดตามการแก้ไขของทุกจุดเสี่ยง — กรองด้วย district หรือ status ได้",
         "parameters": [
           { "$ref": "#/components/parameters/DistrictQuery" },
           {
@@ -224,13 +233,6 @@
             "required": false,
             "description": "กรองตามสถานะงาน",
             "schema": { "$ref": "#/components/schemas/RemediationStatus" }
-          },
-          {
-            "name": "delayed",
-            "in": "query",
-            "required": false,
-            "description": "true = เฉพาะงานที่เลยกำหนดแล้วยังไม่เสร็จ",
-            "schema": { "type": "boolean", "default": false }
           }
         ],
         "responses": {
@@ -244,28 +246,22 @@
                 },
                 "example": [
                   {
-                    "remediationId": "RM-001",
+                    "remediationId": "RM-PDF-001",
                     "riskPointId": "RP-001",
-                    "status": "IN_PROGRESS",
-                    "isDelayed": true,
-                    "responsibleAgency": "สำนักการจราจรและขนส่ง",
-                    "startedAt": "2026-03-10",
-                    "dueAt": "2026-06-30",
-                    "completedAt": null,
-                    "note": "รอผลการจัดซื้อจัดจ้างอุปกรณ์ไฟส่องสว่าง",
-                    "updatedAt": "2026-07-28T14:05:00+07:00"
-                  },
-                  {
-                    "remediationId": "RM-007",
-                    "riskPointId": "RP-007",
                     "status": "COMPLETED",
-                    "isDelayed": false,
                     "responsibleAgency": "สำนักการจราจรและขนส่ง",
-                    "startedAt": "2026-01-15",
-                    "dueAt": "2026-04-30",
                     "completedAt": "2026-04-22",
                     "note": "ติดตั้งสัญญาณไฟคนข้ามแบบกดปุ่มแล้วเสร็จ",
-                    "updatedAt": "2026-04-22T16:40:00+07:00"
+                    "updatedAt": "2026-04-21T17:00:00.000Z"
+                  },
+                  {
+                    "remediationId": "RM-PDF-002",
+                    "riskPointId": "RP-007",
+                    "status": "COMPLETED",
+                    "responsibleAgency": "สน.วังทองหลาง",
+                    "completedAt": "2026-06-18",
+                    "note": "ปรับปรุงไฟฟ้าแสงสว่างบริเวณทางแยกแล้วเสร็จ",
+                    "updatedAt": "2026-06-17T17:00:00.000Z"
                   }
                 ]
               }
@@ -279,17 +275,10 @@
       "get": {
         "operationId": "BottlenecksController_findAll",
         "tags": ["bottlenecks"],
-        "summary": "ค้นหาจุดคอขวดจราจร",
-        "description": "รองรับ use case ดูจุดคอขวดจราจรตาม Activity Diagram ระดับความติดขัดแบ่งตามสีที่แสดงบนแผนที่: NORMAL = ไม่แสดงสี, CONGESTED = สีส้ม, BLOCKED = สีแดงถ้าผู้ใช้ไม่อนุญาตให้เข้าถึงตำแหน่ง ให้เรียกโดยไม่ส่ง lat/lng ระบบจะคืนภาพรวมทั้งเขตแทน (ตรงกับกิ่ง ขอสิทธิ์เข้าถึงตำแหน่งผู้ใช้ ใน diagram) ข้อมูลความเร็วดึงสดจาก iTIC จึงมีโอกาสตอบ 502 เมื่อต้นทางล่ม",
+        "summary": "ค้นหาจุดทางคนเดินข้าม",
+        "description": "แสดงจุดทางคนเดินข้ามจากชุดข้อมูล crosswalk_50 ของ BMA Open Data (50 เขต, ~2,700 จุด) ข้อมูลโหลดจาก data.bangkok.go.th ตอนเริ่มระบบจึงมีโอกาสตอบ 502 เมื่อต้นทางล่ม และรายการจะว่างถ้าดึงข้อมูลไม่สำเร็จ ถ้าผู้ใช้ไม่อนุญาตให้เข้าถึงตำแหน่ง ให้เรียกโดยไม่ส่ง lat/lng ระบบจะคืนภาพรวมทั้งเขตแทน",
         "parameters": [
           { "$ref": "#/components/parameters/DistrictQuery" },
-          {
-            "name": "congestionLevel",
-            "in": "query",
-            "required": false,
-            "description": "กรองตามระดับความติดขัด",
-            "schema": { "$ref": "#/components/schemas/CongestionLevel" }
-          },
           {
             "name": "lat",
             "in": "query",
@@ -314,7 +303,7 @@
         ],
         "responses": {
           "200": {
-            "description": "รายการจุดคอขวดจราจรพร้อมสถานะล่าสุด",
+            "description": "รายการจุดทางคนเดินข้าม",
             "content": {
               "application/json": {
                 "schema": {
@@ -323,26 +312,26 @@
                 },
                 "example": [
                   {
-                    "bottleneckId": "BN-003",
-                    "nameTh": "หน้าห้างเซ็นทรัลลาดพร้าว",
-                    "district": "จตุจักร",
-                    "road": "ถนนพหลโยธิน",
-                    "lat": 13.8163,
-                    "lng": 100.5606,
-                    "congestionLevel": "BLOCKED",
-                    "avgSpeedKmh": 6.5,
-                    "observedAt": "2026-08-07T17:45:00+07:00"
+                    "bottleneckId": "CW-001",
+                    "nameTh": "ซอยลาดพร้าว 41",
+                    "district": "ห้วยขวาง",
+                    "road": "ถนนลาดพร้าว",
+                    "lat": 13.800794,
+                    "lng": 100.583209,
+                    "crossMarking": "ต้องปรับปรุง",
+                    "cType": "Thermo",
+                    "numLane": 4
                   },
                   {
-                    "bottleneckId": "BN-011",
-                    "nameTh": "ทางลงด่วนพระราม 9",
+                    "bottleneckId": "CW-002",
+                    "nameTh": "แยกห้วยขวาง",
                     "district": "ห้วยขวาง",
-                    "road": "ถนนพระราม 9",
-                    "lat": 13.7566,
-                    "lng": 100.5661,
-                    "congestionLevel": "CONGESTED",
-                    "avgSpeedKmh": 18.2,
-                    "observedAt": "2026-08-07T17:45:00+07:00"
+                    "road": "ถนนประชาราษฎร์บำเพ็ญ",
+                    "lat": 13.778547,
+                    "lng": 100.573781,
+                    "crossMarking": "ปกติ",
+                    "cType": "Thermo",
+                    "numLane": 20
                   }
                 ]
               }
@@ -427,7 +416,7 @@
         "operationId": "AdminController_updateRemediation",
         "tags": ["admin"],
         "summary": "อัปเดตสถานะงานแก้ไข (เจ้าหน้าที่)",
-        "description": "รองรับ use case อัปเดตสถานะงาน — ฟิลด์ isDelayed ระบบคำนวณเองจาก dueAt เทียบกับวันปัจจุบัน เจ้าหน้าที่แก้ไม่ได้",
+        "description": "รองรับ use case อัปเดตสถานะงานแก้ไข — เจ้าหน้าที่แก้ไข status / completedAt / note ได้",
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "$ref": "#/components/parameters/RemediationId" }],
         "requestBody": {
@@ -450,16 +439,13 @@
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/Remediation" },
                 "example": {
-                  "remediationId": "RM-001",
+                  "remediationId": "RM-PDF-001",
                   "riskPointId": "RP-001",
                   "status": "COMPLETED",
-                  "isDelayed": false,
                   "responsibleAgency": "สำนักการจราจรและขนส่ง",
-                  "startedAt": "2026-03-10",
-                  "dueAt": "2026-06-30",
                   "completedAt": "2026-08-05",
                   "note": "ติดตั้งกระจกโค้งและไฟส่องสว่างแล้วเสร็จ ตรวจรับงานเรียบร้อย",
-                  "updatedAt": "2026-08-07T09:33:00+07:00"
+                  "updatedAt": "2026-08-07T09:33:00.000Z"
                 }
               }
             }
@@ -494,7 +480,7 @@
         "in": "path",
         "required": true,
         "description": "รหัสงานแก้ไข",
-        "schema": { "type": "string", "example": "RM-001" }
+        "schema": { "type": "string", "example": "RM-PDF-001" }
       },
       "DistrictQuery": {
         "name": "district",
@@ -625,11 +611,11 @@
         "description": "ข้อความที่ extract มาจากเอกสาร PDF ของ data.bangkok.go.th พร้อมอ้างอิงไฟล์ต้นฉบับ",
         "required": ["description", "sourceDocument"],
         "properties": {
-          "description": { "type": "string", "example": "ทัศนวิสัยบริเวณทางแยกถูกบดบังด้วยตอม่อรถไฟฟ้า" },
+          "description": { "type": "string", "example": "อุบัติเหตุจากการวิ่งตัด Lane จราจร" },
           "sourceDocument": {
             "type": "string",
             "description": "ชื่อไฟล์ PDF ต้นฉบับจาก data.bangkok.go.th ที่ extract ข้อมูลนี้ออกมา",
-            "example": "660201-solutions-1-20.pdf"
+            "example": "660628-solutions-1-20.pdf"
           }
         }
       },
@@ -685,20 +671,12 @@
       },
       "Remediation": {
         "type": "object",
-        "required": ["remediationId", "riskPointId", "status", "isDelayed"],
+        "required": ["remediationId", "riskPointId", "status"],
         "properties": {
-          "remediationId": { "type": "string", "example": "RM-001" },
+          "remediationId": { "type": "string", "example": "RM-PDF-001" },
           "riskPointId": { "type": "string", "example": "RP-001" },
           "status": { "$ref": "#/components/schemas/RemediationStatus" },
-          "isDelayed": {
-            "type": "boolean",
-            "description": "ระบบคำนวณเองจาก dueAt เทียบวันปัจจุบัน — true = งานล่าช้า (แสดงผลด้วยสีแดง)",
-            "readOnly": true,
-            "example": true
-          },
           "responsibleAgency": { "type": "string", "example": "สำนักการจราจรและขนส่ง" },
-          "startedAt": { "type": "string", "format": "date", "nullable": true },
-          "dueAt": { "type": "string", "format": "date", "nullable": true },
           "completedAt": { "type": "string", "format": "date", "nullable": true },
           "note": { "type": "string", "nullable": true },
           "updatedAt": { "type": "string", "format": "date-time" }
@@ -713,30 +691,34 @@
           "note": { "type": "string", "nullable": true }
         }
       },
-      "CongestionLevel": {
-        "type": "string",
-        "description": "ระดับความติดขัด ตามสีที่แสดงบนแผนที่ใน Activity Diagram — NORMAL คือไม่แสดงสี, CONGESTED คือสีส้ม, BLOCKED คือสีแดง",
-        "enum": ["NORMAL", "CONGESTED", "BLOCKED"],
-        "example": "BLOCKED"
-      },
       "Bottleneck": {
         "type": "object",
-        "required": ["bottleneckId", "nameTh", "district", "lat", "lng", "congestionLevel", "observedAt"],
+        "required": ["bottleneckId", "nameTh", "district", "lat", "lng", "crossMarking", "cType", "numLane"],
         "properties": {
-          "bottleneckId": { "type": "string", "example": "BN-003" },
-          "nameTh": { "type": "string", "example": "หน้าห้างเซ็นทรัลลาดพร้าว" },
-          "district": { "type": "string", "example": "จตุจักร" },
-          "road": { "type": "string", "example": "ถนนพหลโยธิน" },
-          "lat": { "type": "number", "format": "double", "example": 13.8163 },
-          "lng": { "type": "number", "format": "double", "example": 100.5606 },
-          "congestionLevel": { "$ref": "#/components/schemas/CongestionLevel" },
-          "avgSpeedKmh": {
-            "type": "number",
-            "format": "double",
-            "description": "ความเร็วเฉลี่ยล่าสุดจาก iTIC",
-            "example": 6.5
+          "bottleneckId": { "type": "string", "example": "CW-001" },
+          "nameTh": { "type": "string", "description": "ตำแหน่งทางข้าม (คอลัมน์ location จาก crosswalk_50)", "example": "ซอยลาดพร้าว 41" },
+          "district": { "type": "string", "example": "ห้วยขวาง" },
+          "road": { "type": "string", "example": "ถนนลาดพร้าว" },
+          "lat": { "type": "number", "format": "double", "example": 13.800794 },
+          "lng": { "type": "number", "format": "double", "example": 100.583209 },
+          "crossMarking": {
+            "type": "string",
+            "description": "สภาพเครื่องหมายบนผิวทาง (คอลัมน์ Cross_Marking): ปกติ / ต้องปรับปรุง ...",
+            "nullable": true,
+            "example": "ต้องปรับปรุง"
           },
-          "observedAt": { "type": "string", "format": "date-time" }
+          "cType": {
+            "type": "string",
+            "description": "ประเภททางข้าม (คอลัมน์ C_Type)",
+            "nullable": true,
+            "example": "Thermo"
+          },
+          "numLane": {
+            "type": "integer",
+            "description": "จำนวนช่องจราจร (คอลัมน์ Num_Lane)",
+            "nullable": true,
+            "example": 4
+          }
         }
       },
       "CreateImportRequest": {

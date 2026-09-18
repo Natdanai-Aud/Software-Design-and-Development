@@ -1,15 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import {
-  Bottleneck,
   RankingEntry,
   Remediation,
   RiskPoint,
 } from './models';
-import {
-  CongestionLevel,
-  RemediationStatus,
-  RiskLevel,
-} from './enums';
+import { RiskLevel } from './enums';
+import { buildRemediationsFromPdfDetails } from './remediation-pdf-matcher';
+import { KmlRiskPointSource } from './kml-risk-point-source.service';
+import { remediationPdfDetails } from '../data/remediation-pdf-details';
+import { withPdfDetails } from '../data/risk-point-pdf-details';
 
 function seedRiskPoints(): RiskPoint[] {
   const districts = [
@@ -114,94 +113,41 @@ function seedRiskPoints(): RiskPoint[] {
 }
 
 @Injectable()
-export class MockDataService {
-  private readonly _riskPoints: RiskPoint[] = seedRiskPoints();
+export class MockDataService implements OnModuleInit {
+  private _riskPoints: RiskPoint[] = seedRiskPoints();
 
-  private readonly _remediations: Remediation[] = [
-    {
-      remediationId: 'RM-001',
-      riskPointId: 'RP-001',
-      status: RemediationStatus.IN_PROGRESS,
-      responsibleAgency: 'สำนักการจราจรและขนส่ง',
-      startedAt: '2026-03-10',
-      dueAt: '2026-06-30',
-      completedAt: null,
-      note: 'รอผลการจัดซื้อจัดจ้างอุปกรณ์ไฟส่องสว่าง',
-      updatedAt: '2026-07-28T14:05:00+07:00',
-    },
-    {
-      remediationId: 'RM-007',
-      riskPointId: 'RP-007',
-      status: RemediationStatus.COMPLETED,
-      responsibleAgency: 'สำนักการจราจรและขนส่ง',
-      startedAt: '2026-01-15',
-      dueAt: '2026-04-30',
-      completedAt: '2026-04-22',
-      note: 'ติดตั้งสัญญาณไฟคนข้ามแบบกดปุ่มแล้วเสร็จ',
-      updatedAt: '2026-04-22T16:40:00+07:00',
-    },
-    {
-      remediationId: 'RM-014',
-      riskPointId: 'RP-014',
-      status: RemediationStatus.PENDING,
-      responsibleAgency: 'สำนักการจราจรและขนส่ง',
-      startedAt: null,
-      dueAt: '2026-12-15',
-      completedAt: null,
-      note: 'อยู่ระหว่างจัดทำแบบ',
-      updatedAt: '2026-08-01T10:00:00+07:00',
-    },
-  ];
-
-  private readonly _bottlenecks: Bottleneck[] = [
-    {
-      bottleneckId: 'BN-003',
-      nameTh: 'หน้าห้างเซ็นทรัลลาดพร้าว',
-      district: 'จตุจักร',
-      road: 'ถนนพหลโยธิน',
-      lat: 13.8163,
-      lng: 100.5606,
-      congestionLevel: CongestionLevel.BLOCKED,
-      avgSpeedKmh: 6.5,
-      observedAt: '2026-08-07T17:45:00+07:00',
-    },
-    {
-      bottleneckId: 'BN-011',
-      nameTh: 'ทางลงด่วนพระราม 9',
-      district: 'ห้วยขวาง',
-      road: 'ถนนพระราม 9',
-      lat: 13.7566,
-      lng: 100.5661,
-      congestionLevel: CongestionLevel.CONGESTED,
-      avgSpeedKmh: 18.2,
-      observedAt: '2026-08-07T17:45:00+07:00',
-    },
-    {
-      bottleneckId: 'BN-015',
-      nameTh: 'แยกปทุมวัน',
-      district: 'ปทุมวัน',
-      road: 'ถนนพระราม 1',
-      lat: 13.7449,
-      lng: 100.5331,
-      congestionLevel: CongestionLevel.NORMAL,
-      avgSpeedKmh: 42.3,
-      observedAt: '2026-08-07T17:45:00+07:00',
-    },
-  ];
+  private _pdfRemediations: Remediation[] = [];
 
   private _ranking: RankingEntry[] = [];
   private _rankedAt = '2026-08-01T02:15:00+07:00';
+
+  constructor(private readonly kmlRiskPointSource: KmlRiskPointSource) {
+    this._riskPoints = withPdfDetails(seedRiskPoints());
+    this.refreshPdfRemediations();
+  }
+
+  async onModuleInit() {
+    const fetched = await this.kmlRiskPointSource.fetchRiskPoints();
+
+    if (fetched && fetched.length > 0) {
+      this._riskPoints = withPdfDetails(fetched);
+      this.refreshPdfRemediations();
+    }
+  }
+
+  private refreshPdfRemediations() {
+    this._pdfRemediations = buildRemediationsFromPdfDetails(
+      remediationPdfDetails,
+      this._riskPoints,
+    );
+  }
 
   get riskPoints(): RiskPoint[] {
     return this._riskPoints;
   }
 
   get remediations(): Remediation[] {
-    return this._remediations;
-  }
-
-  get bottlenecks(): Bottleneck[] {
-    return this._bottlenecks;
+    return [...this._pdfRemediations];
   }
 
   get ranking(): RankingEntry[] {

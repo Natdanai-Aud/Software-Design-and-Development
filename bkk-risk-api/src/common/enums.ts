@@ -12,12 +12,6 @@ export enum RemediationStatus {
   CANCELLED = 'CANCELLED',
 }
 
-export enum CongestionLevel {
-  NORMAL = 'NORMAL',
-  CONGESTED = 'CONGESTED',
-  BLOCKED = 'BLOCKED',
-}
-
 export enum ImportSource {
   THAIRSC = 'THAIRSC',
   ITIC = 'ITIC',

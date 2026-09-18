@@ -35,7 +35,7 @@ export class AdminController {
 
   @Patch('remediations/:remediationId')
   @ApiOperation({ summary: 'อัปเดตสถานะงานแก้ไข (เจ้าหน้าที่)' })
-  @ApiParam({ name: 'remediationId', example: 'RM-001' })
+  @ApiParam({ name: 'remediationId', example: 'RM-PDF-001' })
   updateRemediation(
     @Param('remediationId') remediationId: string,
     @Body() dto: UpdateRemediationDto,

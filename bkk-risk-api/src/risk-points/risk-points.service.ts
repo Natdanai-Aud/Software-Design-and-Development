@@ -27,8 +27,6 @@ export class RiskPointsService {
 
     return {
       ...point,
-      remediation:
-        this.remediationService.findLatestByRiskPointId(riskPointId) ?? null,
     };
   }
 }

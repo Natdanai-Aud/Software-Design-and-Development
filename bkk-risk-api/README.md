@@ -2,6 +2,14 @@
 
 Implementation of the uploaded **BKK Data Base API v0.2.0** contract without a database.
 
+เป็น mock backend แบบ In-Memory ที่ดึงข้อมูลจริงจากแหล่งเปิด (Open Data) เมื่อระบบเริ่มทำงาน:
+
+- **Risk points (จุดเสี่ยงอุบัติเหตุ)** — จาก Google My Maps KML (126 จุด) และหากต้นทางล่มจะใช้ seed ในตัว; `causes`/`solutions` ได้จาก PDF วิเคราะห์ (`src/data/risk-point-pdf-details.ts`)
+- **Bottlenecks (จุดทางคนเดินข้าม)** — จาก BMA Open Data ชุด `crosswalk_50` (50 เขต, ประมาณ 2,794 จุด) ดึงตอน startup
+- **Ranking** — ดึงสดจากไฟล์ heat-map xlsx ของ BMA **ทุกครั้งที่เรียกใช้**
+
+> หมายเหตุ: ระบบพึ่ง external data source — หากออฟไลน์หรือต้นทางล่ม bottlenecks จะคืน `[]`, ranking จะ error, และ risk points จะถูกแทนด้วย seed ในตัว
+
 ## Requirements
 
 - Node.js 24 LTS recommended.
@@ -9,24 +17,34 @@ Implementation of the uploaded **BKK Data Base API v0.2.0** contract without a d
 
 ## Install
 
+ติดตั้ง dependencies ทั้งหมดของโปรเจกต์:
+
 ```bash
 npm install
 ```
 
+ติดตั้งระบบโหลดและอ่านไฟล์ xlsx ที่ใช้ดึงข้อมูลจาก BMA Open Data (`RankingService` และ `BottlenecksService`):
+
+```bash
+npm install xlsx @types/xlsx
+npm install axios
+```
+
 ## Environment
 
-Copy `.env.example` to `.env`.
-
-For the mock admin guard:
+คัดลอก `.env.example` (ที่ root ของ repo) เป็น `.env` แล้วตั้งค่า `.env` ถูก gitignore และไม่ควรถูก commit ขึ้น git:
 
 ```text
 ADMIN_MOCK_TOKEN=mock-admin-token
 ```
 
+ค่า `ADMIN_MOCK_TOKEN` ถูกโหลดตอน start ที่ `src/main.ts` จาก `../.env` และใช้ตรวจสิทธิ์ส่วน admin (backend mock) — ค่าเริ่มต้นเป็นค่าสำหรับพัฒนาการเท่านั้น ต้องเปลี่ยนเมื่อนำไปใช้งานจริง
+
 ## Run
 
 ```bash
-npm run start:dev
+npm run start:dev    # development (watch mode)
+npm run start:prod   # production build (ต้อง npm run build ก่อน)
 ```
 
 Swagger:
@@ -34,21 +52,24 @@ Swagger:
 - http://localhost:3000/swagger
 - OpenAPI JSON: http://localhost:3000/swagger-json
 
+พอร์ตเริ่มต้น 3000 เปลี่ยนได้ผ่าน environment `PORT`
+
 ## Endpoints
 
-```text
-GET   /api/risk-points
-GET   /api/risk-points/ranking
-GET   /api/risk-points/:riskPointId
-GET   /api/remediations
-GET   /api/bottlenecks
-
-POST  /api/admin/imports
-POST  /api/admin/ranking/rebuild
-PATCH /api/admin/remediations/:remediationId
-```
+| Method & path | Query / Body | หมายเหตุ |
+| --- | --- | --- |
+| `GET /api/risk-points` | `district`, `riskLevel` (`LOW`/`MEDIUM`/`HIGH`/`CRITICAL`) | list view ไม่มี `causes`/`solutions` |
+| `GET /api/risk-points/:riskPointId` | — | รายละเอียดครบรวม `causes`/`solutions`; `404` ถ้าไม่พบ |
+| `GET /api/risk-points/ranking` | `district`, `limit` (1–100, default 10) | ดึงสดจาก BMA heat-map xlsx ทุกครั้ง |
+| `GET /api/remediations` | `district`, `status` (`PENDING`/`IN_PROGRESS`/`COMPLETED`/`CANCELLED`) | 96 รายการ `RM-PDF-001…096`; ตัด `startedAt`/`dueAt` ออกจาก response |
+| `GET /api/bottlenecks` | `district`, `lat`+`lng`+`radiusKm` (default 5, max 50) | ข้อมูลจริง crosswalk_50, `CW-001…`; ว่างถ้าดึงข้อมูลไม่สำเร็จ |
+| `POST /api/admin/imports` | Bearer; body `source` (enum), `datasetUrl`?, `note`? | จำลอง pipeline นำเข้าข้อมูล (ผล mock) |
+| `POST /api/admin/ranking/rebuild` | Bearer | re-fetch อันดับความเสี่ยงจาก BMA ใหม่ |
+| `PATCH /api/admin/remediations/:remediationId` | Bearer; body `status`?/`dueAt`?/`completedAt`?/`note`? | `404` ถ้าไม่พบรายการ |
 
 ## Mock admin token
+
+ใช้ค่า `ADMIN_MOCK_TOKEN` จาก `.env` (ค่าเริ่มต้นใน `.env.example` คือ `mock-admin-token` — ใช้กับการพัฒนาเท่านั้น):
 
 ```text
 Authorization: Bearer mock-admin-token
@@ -56,12 +77,12 @@ Authorization: Bearer mock-admin-token
 
 ## Important business rules
 
-1. `/api/bottlenecks`: `lat` and `lng` must be sent together.
-2. Remediation `isDelayed` is computed by the service and is not accepted from clients.
-3. `/api/remediations?delayed=true` returns only delayed, unfinished work.
-4. `/api/bottlenecks` can filter by `district`, `congestionLevel`, and optional radius around `lat/lng`.
-5. GET ranking reads a stored/precomputed ranking. Rebuild is admin-only.
-6. The OpenAPI file specifies that `riskScore` depends on accident count, fatalities, and injuries, but it does not specify exact weights. The mock uses a documented deterministic formula so this part can be swapped later.
+1. `/api/bottlenecks`: `lat` และ `lng` ต้องส่งมาด้วยกันเสมอ (ส่งแค่ตัวเดียว → `400`); `radiusKm` สูงสุด 50
+2. Validation เป็นแบบ whitelist เข้มงวด (`forbidNonWhitelisted`) — query/body ที่ไม่อยู่ใน spec จะได้ `400` (เช่น `?congestionLevel=…`, `?delayed=…` ที่ถูกลบออกไปแล้ว)
+3. `/api/risk-points/:id` และ `/api/remediations` มี `404` เมื่อไม่พบรายการ
+4. Endpoint ส่วน admin ทั้งหมดต้องมี `Authorization: Bearer <ADMIN_MOCK_TOKEN>` — ไม่ส่งหรือ token ผิด → `401`
+5. `GET /api/risk-points/ranking` ดึงข้อมูลสดจาก BMA ทุกครั้ง; `POST /api/admin/ranking/rebuild` เป็นงาน admin เท่านั้น
+6. Remediation response ไม่เปิดเผย `startedAt`/`dueAt`; `causes`/`solutions` ของจุดเสี่ยงแสดงเฉพาะใน detail (`GET /api/risk-points/:id`)
 
 ## cURL examples
 
@@ -69,7 +90,7 @@ Authorization: Bearer mock-admin-token
 
 ```bash
 curl.exe "http://localhost:3000/api/risk-points"
-curl.exe "http://localhost:3000/api/risk-points?district=จตุจักร&riskLevel=CRITICAL"
+curl.exe "http://localhost:3000/api/risk-points?district=สวนหลวง&riskLevel=CRITICAL"
 curl.exe "http://localhost:3000/api/risk-points/RP-001"
 ```
 
@@ -77,26 +98,26 @@ curl.exe "http://localhost:3000/api/risk-points/RP-001"
 
 ```bash
 curl.exe "http://localhost:3000/api/risk-points/ranking"
-curl.exe "http://localhost:3000/api/risk-points/ranking?district=จตุจักร&limit=5"
+curl.exe "http://localhost:3000/api/risk-points/ranking?district=สวนหลวง&limit=5"
 ```
 
 ### Remediation
 
 ```bash
 curl.exe "http://localhost:3000/api/remediations"
-curl.exe "http://localhost:3000/api/remediations?district=จตุจักร"
-curl.exe "http://localhost:3000/api/remediations?status=IN_PROGRESS&delayed=true"
+curl.exe "http://localhost:3000/api/remediations?district=สวนหลวง"
+curl.exe "http://localhost:3000/api/remediations?status=IN_PROGRESS"
 ```
 
 ### Bottlenecks
 
 ```bash
 curl.exe "http://localhost:3000/api/bottlenecks"
-curl.exe "http://localhost:3000/api/bottlenecks?district=จตุจักร&congestionLevel=BLOCKED"
+curl.exe "http://localhost:3000/api/bottlenecks?district=ห้วยขวาง"
 curl.exe "http://localhost:3000/api/bottlenecks?lat=13.7563&lng=100.5018&radiusKm=5"
 ```
 
-Invalid pair test:
+Invalid pair test (ต้อง `400`):
 
 ```bash
 curl.exe "http://localhost:3000/api/bottlenecks?lat=13.7563"
@@ -117,7 +138,7 @@ curl.exe -X POST "http://localhost:3000/api/admin/ranking/rebuild" ^
 ```
 
 ```bash
-curl.exe -X PATCH "http://localhost:3000/api/admin/remediations/RM-001" ^
+curl.exe -X PATCH "http://localhost:3000/api/admin/remediations/RM-PDF-001" ^
   -H "Authorization: Bearer mock-admin-token" ^
   -H "Content-Type: application/json" ^
   -d "{\"status\":\"COMPLETED\",\"completedAt\":\"2026-08-05\",\"note\":\"ติดตั้งอุปกรณ์แล้วเสร็จ\"}"
@@ -127,4 +148,11 @@ Unauthorized test:
 
 ```bash
 curl.exe -X POST "http://localhost:3000/api/admin/ranking/rebuild"
+```
+
+## Testing
+
+```bash
+npm test    # jest — 4 suites / 34 tests
+npm run lint
 ```

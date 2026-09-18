@@ -11,28 +11,11 @@ import { UpdateRemediationDto } from './dto/update-remediation.dto';
 export class RemediationService {
   constructor(private readonly mockData: MockDataService) {}
 
-  private todayDateString(): string {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  }
-
-  isDelayed(item: Remediation): boolean {
-    const today = this.todayDateString();
-    return (
-      item.status !== RemediationStatus.COMPLETED &&
-      !!item.dueAt &&
-      item.dueAt < today
-    );
-  }
-
-  private withComputedStatus(item: Remediation): Remediation & { isDelayed: boolean } {
-    return {
-      ...item,
-      isDelayed: this.isDelayed(item),
-    };
+  private toPublicResponse(
+    item: Remediation,
+  ): Omit<Remediation, 'startedAt' | 'dueAt'> {
+    const { startedAt, dueAt, ...rest } = item;
+    return rest;
   }
 
   findLatestByRiskPointId(riskPointId: string) {
@@ -40,23 +23,22 @@ export class RemediationService {
       .filter((item) => item.riskPointId === riskPointId)
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
-    return items.length ? this.withComputedStatus(items[0]) : null;
+    return items.length ? this.toPublicResponse(items[0]) : null;
   }
 
-  findAll(district?: string, status?: RemediationStatus, delayed?: boolean) {
+  findAll(district?: string, status?: RemediationStatus) {
     const riskPointsById = new Map(
       this.mockData.riskPoints.map((point) => [point.riskPointId, point]),
     );
 
     const result = this.mockData.remediations
-      .map((item) => this.withComputedStatus(item))
       .filter((item) => {
         if (!district) return true;
         const point = riskPointsById.get(item.riskPointId);
         return point?.district === district;
       })
       .filter((item) => !status || item.status === status)
-      .filter((item) => delayed !== true || item.isDelayed);
+      .map((item) => this.toPublicResponse(item));
 
     return result;
   }
@@ -80,6 +62,6 @@ export class RemediationService {
       updatedAt: new Date().toISOString(),
     });
 
-    return this.withComputedStatus(item);
+    return this.toPublicResponse(item);
   }
 }

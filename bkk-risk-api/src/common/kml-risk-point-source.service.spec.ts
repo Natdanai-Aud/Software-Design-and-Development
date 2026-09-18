@@ -5,7 +5,6 @@ import {
 import { MockDataService } from './mock-data.service';
 import { RiskLevel } from './enums';
 import { RiskPoint } from './models';
-import { withPdfDetails } from '../data/risk-point-pdf-details';
 
 const sampleKml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
@@ -179,27 +178,38 @@ describe('KmlRiskPointSource', () => {
   });
 });
 
-describe('MockDataService fallback', () => {
-  it('keeps seeded mock points when the KML source returns null', async () => {
-    const source = {
-      fetchRiskPoints: jest.fn().mockResolvedValue(null),
-    } as unknown as KmlRiskPointSource;
+describe('MockDataService risk point source', () => {
+  function makeSource(impl?: {
+    fetchRiskPoints?: jest.Mock;
+  }): KmlRiskPointSource {
+    return { fetchRiskPoints: jest.fn(), ...impl } as unknown as KmlRiskPointSource;
+  }
+
+  it('seeds 100 mock risk points by default', () => {
+    const service = new MockDataService(makeSource());
+
+    expect(service.riskPoints).toHaveLength(100);
+    expect(service.riskPoints[0].riskPointId).toBe('RP-001');
+    expect(service.riskPoints[0].riskLevel).toBe(RiskLevel.CRITICAL);
+  });
+
+  it('keeps seeded points when the KML source returns nothing', async () => {
+    const source = makeSource({ fetchRiskPoints: jest.fn().mockResolvedValue(null) });
     const service = new MockDataService(source);
 
     await service.onModuleInit();
 
+    expect(source.fetchRiskPoints).toHaveBeenCalled();
     expect(service.riskPoints).toHaveLength(100);
-    expect(service.riskPoints[0].riskPointId).toBe('RP-001');
   });
 
-  it('replaces seeded points when the KML source returns points', async () => {
-    const kmlSource = new KmlRiskPointSource();
-    const kmlPoints: RiskPoint[] = [
+  it('replaces seeded points with real points from the KML source', async () => {
+    const realPoints: RiskPoint[] = [
       {
-        riskPointId: 'RP-001',
-        clusterRank: 1,
-        nameTh: 'แยกพัฒนาการ',
-        district: 'สวนหลวง',
+        riskPointId: 'RP-042',
+        clusterRank: 999,
+        nameTh: 'แยกทดสอบ',
+        district: 'ทดสอบ',
         lat: 13.735236,
         lng: 100.64114,
         accidentCount: 420,
@@ -211,16 +221,48 @@ describe('MockDataService fallback', () => {
         solutions: [],
       },
     ];
-    const source = {
-      fetchRiskPoints: jest.fn().mockResolvedValue(kmlPoints),
-    } as unknown as typeof kmlSource;
+    const source = makeSource({ fetchRiskPoints: jest.fn().mockResolvedValue(realPoints) });
     const service = new MockDataService(source);
 
     await service.onModuleInit();
 
-    expect(service.riskPoints).toEqual(withPdfDetails(kmlPoints));
+    const point = service.riskPoints[0];
     expect(service.riskPoints).toHaveLength(1);
-    expect(service.riskPoints[0].causes).toHaveLength(3);
-    expect(service.riskPoints[0].solutions).toHaveLength(3);
+    expect(point.riskPointId).toBe('RP-042');
+    expect(point.clusterRank).toBe(999);
+    expect(point.causes).toEqual([]);
+    expect(point.solutions).toEqual([]);
+  });
+
+  it('attaches PDF-extracted causes and solutions to replaced KML points by cluster rank', async () => {
+    const realPoints: RiskPoint[] = [
+      {
+        riskPointId: 'RP-042',
+        clusterRank: 1,
+        nameTh: 'แยกทดสอบ',
+        district: 'ทดสอบ',
+        lat: 13.735236,
+        lng: 100.64114,
+        accidentCount: 420,
+        fatalities: 12,
+        injuries: 390,
+        riskLevel: RiskLevel.CRITICAL,
+        dataYearRange: '2566-2568',
+        causes: [],
+        solutions: [],
+      },
+    ];
+    const source = makeSource({ fetchRiskPoints: jest.fn().mockResolvedValue(realPoints) });
+    const service = new MockDataService(source);
+
+    await service.onModuleInit();
+
+    const point = service.riskPoints[0];
+    expect(point.causes).toHaveLength(3);
+    expect(point.causes[0]).toEqual({
+      description: 'อุบัติเหตุจากการวิ่งตัด Lane จราจร',
+      sourceDocument: '660628-solutions-1-20.pdf',
+    });
+    expect(point.solutions.length).toBeGreaterThan(0);
   });
 });

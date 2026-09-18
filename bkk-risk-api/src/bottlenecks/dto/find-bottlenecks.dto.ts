@@ -1,25 +1,18 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  IsEnum,
   IsNumber,
   IsOptional,
   IsString,
   Max,
   Min,
 } from 'class-validator';
-import { CongestionLevel } from '../../common/enums';
 
 export class FindBottlenecksDto {
   @ApiPropertyOptional({ example: 'จตุจักร' })
   @IsOptional()
   @IsString()
   district?: string;
-
-  @ApiPropertyOptional({ enum: CongestionLevel })
-  @IsOptional()
-  @IsEnum(CongestionLevel)
-  congestionLevel?: CongestionLevel;
 
   @ApiPropertyOptional({ example: 13.7563 })
   @IsOptional()

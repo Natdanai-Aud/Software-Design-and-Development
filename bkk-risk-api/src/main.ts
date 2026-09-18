@@ -1,7 +1,11 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { config as loadEnv } from 'dotenv';
+import * as path from 'path';
 import { AppModule } from './app.module';
+
+loadEnv({ path: path.resolve(process.cwd(), '..', '.env') });
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -25,8 +29,8 @@ async function bootstrap() {
       {
         type: 'http',
         scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Mock admin token: mock-admin-token',
+        bearerFormat: 'bearer',
+        description: 'Admin access via ADMIN_MOCK_TOKEN (mock backend)',
       },
       'bearerAuth',
     )
