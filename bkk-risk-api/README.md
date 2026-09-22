@@ -62,7 +62,7 @@ Swagger:
 | `GET /api/risk-points/:riskPointId` | — | รายละเอียดครบรวม `causes`/`solutions`; `404` ถ้าไม่พบ |
 | `GET /api/risk-points/ranking` | `district`, `limit` (1–100, default 10) | ดึงสดจาก BMA heat-map xlsx ทุกครั้ง |
 | `GET /api/remediations` | `district`, `status` (`PENDING`/`IN_PROGRESS`/`COMPLETED`/`CANCELLED`) | 96 รายการ `RM-PDF-001…096`; ตัด `startedAt`/`dueAt` ออกจาก response |
-| `GET /api/bottlenecks` | `district`, `lat`+`lng`+`radiusKm` (default 5, max 50) | ข้อมูลจริง crosswalk_50, `CW-001…`; ว่างถ้าดึงข้อมูลไม่สำเร็จ |
+| `GET /api/bottlenecks` | `district` (บังคับ) | ข้อมูลจริง crosswalk_50, `CW-001…`; ว่างถ้าดึงข้อมูลไม่สำเร็จ; ไม่ส่ง `district` → `400` |
 | `POST /api/admin/imports` | Bearer; body `source` (enum), `datasetUrl`?, `note`? | จำลอง pipeline นำเข้าข้อมูล (ผล mock) |
 | `POST /api/admin/ranking/rebuild` | Bearer | re-fetch อันดับความเสี่ยงจาก BMA ใหม่ |
 | `PATCH /api/admin/remediations/:remediationId` | Bearer; body `status`?/`dueAt`?/`completedAt`?/`note`? | `404` ถ้าไม่พบรายการ |
@@ -77,8 +77,8 @@ Authorization: Bearer mock-admin-token
 
 ## Important business rules
 
-1. `/api/bottlenecks`: `lat` และ `lng` ต้องส่งมาด้วยกันเสมอ (ส่งแค่ตัวเดียว → `400`); `radiusKm` สูงสุด 50
-2. Validation เป็นแบบ whitelist เข้มงวด (`forbidNonWhitelisted`) — query/body ที่ไม่อยู่ใน spec จะได้ `400` (เช่น `?congestionLevel=…`, `?delayed=…` ที่ถูกลบออกไปแล้ว)
+1. Validation เป็นแบบ whitelist เข้มงวด (`forbidNonWhitelisted`) — query/body ที่ไม่อยู่ใน spec จะได้ `400` (เช่น `?congestionLevel=…`, `?delayed=…`, `?lat=…&lng=…` ที่ถูกลบออกไปแล้ว)
+2. `/api/bottlenecks`: ต้องส่ง `district` เสมอ — ไม่ส่งหรือว่าง → `400`
 3. `/api/risk-points/:id` และ `/api/remediations` มี `404` เมื่อไม่พบรายการ
 4. Endpoint ส่วน admin ทั้งหมดต้องมี `Authorization: Bearer <ADMIN_MOCK_TOKEN>` — ไม่ส่งหรือ token ผิด → `401`
 5. `GET /api/risk-points/ranking` ดึงข้อมูลสดจาก BMA ทุกครั้ง; `POST /api/admin/ranking/rebuild` เป็นงาน admin เท่านั้น
@@ -112,15 +112,13 @@ curl.exe "http://localhost:3000/api/remediations?status=IN_PROGRESS"
 ### Bottlenecks
 
 ```bash
-curl.exe "http://localhost:3000/api/bottlenecks"
 curl.exe "http://localhost:3000/api/bottlenecks?district=ห้วยขวาง"
-curl.exe "http://localhost:3000/api/bottlenecks?lat=13.7563&lng=100.5018&radiusKm=5"
 ```
 
-Invalid pair test (ต้อง `400`):
+ไม่ส่ง `district` → `400` (ต้องส่งเสมอ):
 
 ```bash
-curl.exe "http://localhost:3000/api/bottlenecks?lat=13.7563"
+curl.exe "http://localhost:3000/api/bottlenecks"
 ```
 
 ### Admin

@@ -276,29 +276,14 @@
         "operationId": "BottlenecksController_findAll",
         "tags": ["bottlenecks"],
         "summary": "ค้นหาจุดทางคนเดินข้าม",
-        "description": "แสดงจุดทางคนเดินข้ามจากชุดข้อมูล crosswalk_50 ของ BMA Open Data (50 เขต, ~2,700 จุด) ข้อมูลโหลดจาก data.bangkok.go.th ตอนเริ่มระบบจึงมีโอกาสตอบ 502 เมื่อต้นทางล่ม และรายการจะว่างถ้าดึงข้อมูลไม่สำเร็จ ถ้าผู้ใช้ไม่อนุญาตให้เข้าถึงตำแหน่ง ให้เรียกโดยไม่ส่ง lat/lng ระบบจะคืนภาพรวมทั้งเขตแทน",
+        "description": "แสดงจุดทางคนเดินข้ามของเขตที่ระบุจากชุดข้อมูล crosswalk_50 ของ BMA Open Data (50 เขต, ~2,700 จุด) ต้องส่ง district เสมอ ข้อมูลโหลดจาก data.bangkok.go.th ตอนเริ่มระบบจึงมีโอกาสตอบ 502 เมื่อต้นทางล่ม และรายการจะว่างถ้าดึงข้อมูลไม่สำเร็จ",
         "parameters": [
-          { "$ref": "#/components/parameters/DistrictQuery" },
           {
-            "name": "lat",
+            "name": "district",
             "in": "query",
-            "required": false,
-            "description": "ละติจูดตำแหน่งผู้ใช้ (ต้องส่งคู่กับ lng)",
-            "schema": { "type": "number", "format": "double", "example": 13.7563 }
-          },
-          {
-            "name": "lng",
-            "in": "query",
-            "required": false,
-            "description": "ลองจิจูดตำแหน่งผู้ใช้ (ต้องส่งคู่กับ lat)",
-            "schema": { "type": "number", "format": "double", "example": 100.5018 }
-          },
-          {
-            "name": "radiusKm",
-            "in": "query",
-            "required": false,
-            "description": "รัศมีการค้นหาเป็นกิโลเมตร",
-            "schema": { "type": "number", "format": "double", "default": 5, "maximum": 50 }
+            "required": true,
+            "description": "ชื่อเขตในกรุงเทพมหานคร (บังคับ)",
+            "schema": { "type": "string", "example": "จตุจักร" }
           }
         ],
         "responses": {
