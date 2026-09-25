@@ -1,6 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
+
+interface ExcelRow {
+  no?: number | string;
+  location?: string;
+  district?: string;
+  police_station?: string;
+  lat?: number | string;
+  long?: number | string;
+  res_agency?: string;
+}
 
 @Injectable()
 export class RankingService {
@@ -20,7 +30,7 @@ export class RankingService {
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
 
-      const rows = XLSX.utils.sheet_to_json<any>(worksheet, {
+      const rows = XLSX.utils.sheet_to_json<ExcelRow>(worksheet, {
         defval: null,
       });
 
@@ -39,10 +49,9 @@ export class RankingService {
         data,
       };
     } catch (error) {
-      throw new Error(
-        `Failed to load risk data from BMA Open Data: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+      throw new InternalServerErrorException(
+        'Failed to load risk data from BMA Open Data',
+        { cause: error },
       );
     }
   }
