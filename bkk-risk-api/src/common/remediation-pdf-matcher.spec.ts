@@ -24,7 +24,11 @@ function makeRiskPoint(overrides: Partial<RiskPoint>): RiskPoint {
 
 describe('matchRiskPointByCoordinates', () => {
   it('matches the closest point within range', () => {
-    const near = makeRiskPoint({ riskPointId: 'RP-001', lat: 13.7113, lng: 100.4995 });
+    const near = makeRiskPoint({
+      riskPointId: 'RP-001',
+      lat: 13.7113,
+      lng: 100.4995,
+    });
     const far = makeRiskPoint({ riskPointId: 'RP-002', lat: 13.9, lng: 100.9 });
 
     const match = matchRiskPointByCoordinates(13.711271, 100.4995, [far, near]);
@@ -33,7 +37,11 @@ describe('matchRiskPointByCoordinates', () => {
   });
 
   it('returns null when nothing is within range', () => {
-    const distant = makeRiskPoint({ riskPointId: 'RP-001', lat: 14.5, lng: 101.5 });
+    const distant = makeRiskPoint({
+      riskPointId: 'RP-001',
+      lat: 14.5,
+      lng: 101.5,
+    });
 
     const match = matchRiskPointByCoordinates(13.711271, 100.4995, [distant]);
 
@@ -89,9 +97,15 @@ describe('buildRemediationsFromPdfDetails', () => {
   });
 
   it('assigns unique sequential remediationIds', () => {
-    const twoMatching = [details[0], { ...details[0], lat: 13.736391, lng: 100.56129 }];
+    const twoMatching = [
+      details[0],
+      { ...details[0], lat: 13.736391, lng: 100.56129 },
+    ];
     const result = buildRemediationsFromPdfDetails(twoMatching, riskPoints);
 
-    expect(result.map((r) => r.remediationId)).toEqual(['RM-PDF-001', 'RM-PDF-002']);
+    expect(result.map((r) => r.remediationId)).toEqual([
+      'RM-PDF-001',
+      'RM-PDF-002',
+    ]);
   });
 });

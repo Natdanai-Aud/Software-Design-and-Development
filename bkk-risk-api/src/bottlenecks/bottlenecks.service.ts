@@ -88,9 +88,7 @@ export class BottlenecksService implements OnModuleInit {
       (resourceId) => this.fetchOne(resourceId),
     );
 
-    const succeeded = results.filter(
-      (r): r is Bottleneck[] => r !== null,
-    );
+    const succeeded = results.filter((r): r is Bottleneck[] => r !== null);
 
     if (succeeded.length === 0) {
       this.logger.warn('All crosswalk xlsx downloads failed');
@@ -163,13 +161,13 @@ export class BottlenecksService implements OnModuleInit {
       return null;
     }
 
-    const location = String(fields.get('location') ?? '').trim();
-    const road = String(fields.get('road') ?? '').trim();
+    const location = this.toText(fields.get('location'));
+    const road = this.toText(fields.get('road'));
 
     return {
       bottleneckId: '',
       nameTh: location || road || 'ทางคนเดินข้าม',
-      district: String(fields.get('district') ?? '').trim(),
+      district: this.toText(fields.get('district')),
       road: road || undefined,
       lat,
       lng,
@@ -179,8 +177,23 @@ export class BottlenecksService implements OnModuleInit {
     };
   }
 
+  private toText(value: unknown): string {
+    switch (typeof value) {
+      case 'string':
+        return value.trim();
+      case 'number':
+        return Number.isFinite(value) ? String(value) : '';
+      case 'boolean':
+        return value ? 'true' : 'false';
+      case 'object':
+        return value instanceof Date ? value.toISOString() : '';
+      default:
+        return '';
+    }
+  }
+
   private stringOrNull(value: unknown): string | null {
-    const text = String(value ?? '').trim();
+    const text = this.toText(value);
     return text ? text : null;
   }
 
@@ -194,7 +207,7 @@ export class BottlenecksService implements OnModuleInit {
     limit: number,
     fn: (item: T) => Promise<R>,
   ): Promise<R[]> {
-    const results: R[] = new Array(items.length);
+    const results: R[] = new Array<R>(items.length);
     let cursor = 0;
 
     const worker = async () => {
@@ -219,7 +232,7 @@ function normalizeKey(key: string): string {
     .replace(/^\uFEFF/, '')
     .trim()
     .toLowerCase()
-    .replace(/[\s_\-]+/g, '');
+    .replace(/[\s_-]+/g, '');
 }
 
 const KEY_ALIASES: Record<string, string> = {

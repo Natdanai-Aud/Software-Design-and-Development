@@ -17,7 +17,11 @@ export class RiskPointsController {
   @Get()
   @ApiOperation({ summary: 'ค้นหาจุดเสี่ยงอุบัติเหตุสำหรับแสดงบนแผนที่' })
   @ApiQuery({ name: 'district', required: false, example: 'จตุจักร' })
-  @ApiQuery({ name: 'riskLevel', required: false, enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] })
+  @ApiQuery({
+    name: 'riskLevel',
+    required: false,
+    enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'],
+  })
   @ApiResponse({ status: 200 })
   findAll(@Query() query: FindRiskPointsDto) {
     return this.service.findAll(query.district, query.riskLevel);

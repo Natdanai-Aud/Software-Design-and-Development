@@ -1,9 +1,6 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { MockDataService } from '../common/mock-data.service';
-import { Remediation, RiskPoint } from '../common/models';
+import { Remediation } from '../common/models';
 import { RemediationStatus } from '../common/enums';
 import { UpdateRemediationDto } from './dto/update-remediation.dto';
 

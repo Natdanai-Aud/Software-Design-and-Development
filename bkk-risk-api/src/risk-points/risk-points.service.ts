@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { RiskLevel } from '../common/enums';
 import { MockDataService } from '../common/mock-data.service';
 import { RemediationService } from '../remediation/remediation.service';
 
@@ -9,7 +10,7 @@ export class RiskPointsService {
     private readonly remediationService: RemediationService,
   ) {}
 
-  findAll(district?: string, riskLevel?: string) {
+  findAll(district?: string, riskLevel?: RiskLevel) {
     return this.mockData.riskPoints
       .filter((point) => !district || point.district === district)
       .filter((point) => !riskLevel || point.riskLevel === riskLevel)

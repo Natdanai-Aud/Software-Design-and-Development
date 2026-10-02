@@ -1,9 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import {
-  RankingEntry,
-  Remediation,
-  RiskPoint,
-} from './models';
+import { RankingEntry, Remediation, RiskPoint } from './models';
 import { RiskLevel } from './enums';
 import { buildRemediationsFromPdfDetails } from './remediation-pdf-matcher';
 import { KmlRiskPointSource } from './kml-risk-point-source.service';
@@ -45,7 +41,7 @@ function seedRiskPoints(): RiskPoint[] {
       nameTh: `จุดเสี่ยงจำลอง ${String(rank).padStart(3, '0')}`,
       district,
       road: `ถนนจำลองสาย ${rank}`,
-      lat: 13.70 + (index % 20) * 0.008,
+      lat: 13.7 + (index % 20) * 0.008,
       lng: 100.47 + (index % 20) * 0.007,
       accidentCount: accidents,
       fatalities,

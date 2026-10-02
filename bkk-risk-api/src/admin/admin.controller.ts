@@ -1,4 +1,11 @@
-import { Body, Controller, Patch, Post, Param, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Patch,
+  Post,
+  Param,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -22,7 +29,9 @@ export class AdminController {
   ) {}
 
   @Post('imports')
-  @ApiOperation({ summary: 'นำเข้าข้อมูลดิบและทำความสะอาดข้อมูล (เจ้าหน้าที่)' })
+  @ApiOperation({
+    summary: 'นำเข้าข้อมูลดิบและทำความสะอาดข้อมูล (เจ้าหน้าที่)',
+  })
   createImport(@Body() dto: CreateImportDto) {
     return this.adminService.createImport(dto);
   }

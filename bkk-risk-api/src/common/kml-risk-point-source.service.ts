@@ -51,20 +51,27 @@ export class KmlRiskPointSource {
 
       return points;
     } catch (error) {
-      this.logger.warn(
-        `KML fetch failed: ${(error as Error).message}`,
-      );
+      this.logger.warn(`KML fetch failed: ${(error as Error).message}`);
       return null;
     }
   }
 
   parseKml(xml: string): RiskPoint[] {
-    const document = this.parser.parse(xml);
-    const placemarks = this.collectPlacemarks(document?.kml?.Document);
+    const document: unknown = this.parser.parse(xml);
+    const placemarks = this.collectPlacemarks(
+      this.pick(this.pick(document, 'kml'), 'Document'),
+    );
 
     return placemarks
       .map((placemark, index) => this.mapPlacemark(placemark, index))
       .filter((point): point is RiskPoint => point !== null);
+  }
+
+  private pick(value: unknown, key: string): unknown {
+    if (!value || typeof value !== 'object') {
+      return undefined;
+    }
+    return (value as Record<string, unknown>)[key];
   }
 
   private collectPlacemarks(node: unknown): KmlPlacemark[] {
@@ -155,7 +162,10 @@ export class KmlRiskPointSource {
     return match ? `ถ.${match[1].trim()}` : undefined;
   }
 
-  private getExtendedData(placemark: KmlPlacemark, key: string): string | undefined {
+  private getExtendedData(
+    placemark: KmlPlacemark,
+    key: string,
+  ): string | undefined {
     const data = placemark.ExtendedData?.Data;
     if (!data) {
       return undefined;

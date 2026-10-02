@@ -11,7 +11,11 @@ export class RemediationController {
   @Get()
   @ApiOperation({ summary: 'ติดตามสถานะการแก้ไขของทุกจุดเสี่ยง' })
   @ApiQuery({ name: 'district', required: false, example: 'จตุจักร' })
-  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+  })
   findAll(@Query() query: FindRemediationsDto) {
     return this.service.findAll(query.district, query.status);
   }

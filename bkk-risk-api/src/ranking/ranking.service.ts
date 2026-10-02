@@ -60,10 +60,6 @@ export class RankingService {
     return await this.getRiskRanking();
   }
 
-  async seedInitialRanking() {
-    return await this.getRiskRanking();
-  }
-
   async findTop(district?: string, limit?: number) {
     const result = await this.getRiskRanking();
     let data = result.data;

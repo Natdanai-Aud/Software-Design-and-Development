@@ -1,8 +1,4 @@
-import {
-  ImportSource,
-  RemediationStatus,
-  RiskLevel,
-} from './enums';
+import { ImportSource, RemediationStatus, RiskLevel } from './enums';
 
 export interface SourcedNote {
   description: string;

@@ -147,7 +147,7 @@ describe('KmlRiskPointSource', () => {
         status: 500,
         statusText: 'Server Error',
       });
-      global.fetch = fetchMock as unknown as typeof fetch;
+      global.fetch = fetchMock;
 
       await expect(source.fetchRiskPoints()).resolves.toBeNull();
       expect(fetchMock).toHaveBeenCalledWith(
@@ -157,9 +157,7 @@ describe('KmlRiskPointSource', () => {
     });
 
     it('returns null when the request throws', async () => {
-      global.fetch = jest
-        .fn()
-        .mockRejectedValue(new Error('network down')) as unknown as typeof fetch;
+      global.fetch = jest.fn().mockRejectedValue(new Error('network down'));
 
       await expect(source.fetchRiskPoints()).resolves.toBeNull();
     });
@@ -168,7 +166,7 @@ describe('KmlRiskPointSource', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         text: jest.fn().mockResolvedValue(sampleKml),
-      }) as unknown as typeof fetch;
+      });
 
       const points = await source.fetchRiskPoints();
 
@@ -182,7 +180,10 @@ describe('MockDataService risk point source', () => {
   function makeSource(impl?: {
     fetchRiskPoints?: jest.Mock;
   }): KmlRiskPointSource {
-    return { fetchRiskPoints: jest.fn(), ...impl } as unknown as KmlRiskPointSource;
+    return {
+      fetchRiskPoints: jest.fn(),
+      ...impl,
+    } as unknown as KmlRiskPointSource;
   }
 
   it('seeds 100 mock risk points by default', () => {
@@ -194,7 +195,9 @@ describe('MockDataService risk point source', () => {
   });
 
   it('keeps seeded points when the KML source returns nothing', async () => {
-    const source = makeSource({ fetchRiskPoints: jest.fn().mockResolvedValue(null) });
+    const source = makeSource({
+      fetchRiskPoints: jest.fn().mockResolvedValue(null),
+    });
     const service = new MockDataService(source);
 
     await service.onModuleInit();
@@ -221,7 +224,9 @@ describe('MockDataService risk point source', () => {
         solutions: [],
       },
     ];
-    const source = makeSource({ fetchRiskPoints: jest.fn().mockResolvedValue(realPoints) });
+    const source = makeSource({
+      fetchRiskPoints: jest.fn().mockResolvedValue(realPoints),
+    });
     const service = new MockDataService(source);
 
     await service.onModuleInit();
@@ -252,7 +257,9 @@ describe('MockDataService risk point source', () => {
         solutions: [],
       },
     ];
-    const source = makeSource({ fetchRiskPoints: jest.fn().mockResolvedValue(realPoints) });
+    const source = makeSource({
+      fetchRiskPoints: jest.fn().mockResolvedValue(realPoints),
+    });
     const service = new MockDataService(source);
 
     await service.onModuleInit();
