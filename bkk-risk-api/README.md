@@ -152,5 +152,15 @@ curl.exe -X POST "http://localhost:3000/api/admin/ranking/rebuild"
 
 ```bash
 npm test    # jest — 4 suites / 34 tests
-npm run lint
 ```
+
+Lint และ format (ESLint 9 + Prettier):
+
+```bash
+npm run lint          # eslint --fix — แก้อัตโนมัติระหว่างพัฒนา
+npm run lint:check    # ตรวจอย่างเดียว ไม่แก้ไฟล์ — ใช้ใน CI
+npm run format        # prettier --write
+npm run format:check  # prettier --check — ใช้ใน CI
+```
+
+ตั้งค่าอยู่ใน `eslint.config.mjs`, `.prettierrc` และ `.prettierignore` — ไฟล์ข้อมูลที่ generate จาก PDF (`src/data/*-pdf-details.ts`) ถูกตัดออกจากการจัดรูปแบบอัตโนมัติ แต่ยังผ่านการตรวจ lint
