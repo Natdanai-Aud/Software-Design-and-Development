@@ -4,11 +4,11 @@ Implementation of the uploaded **BKK Data Base API v0.2.0** contract without a d
 
 เป็น mock backend แบบ In-Memory ที่ดึงข้อมูลจริงจากแหล่งเปิด (Open Data) เมื่อระบบเริ่มทำงาน:
 
-- **Risk points (จุดเสี่ยงอุบัติเหตุ)** — จาก Google My Maps KML (126 จุด) และหากต้นทางล่มจะใช้ seed ในตัว; `causes`/`solutions` ได้จาก PDF วิเคราะห์ (`src/data/risk-point-pdf-details.ts`)
-- **Bottlenecks (จุดทางคนเดินข้าม)** — จาก BMA Open Data ชุด `crosswalk_50` (50 เขต, ประมาณ 2,794 จุด) ดึงตอน startup
+- **Risk points (จุดเสี่ยงอุบัติเหตุ)** — จาก Google My Maps KML (100 จุด ตาม `MAX_RANK` ของ `scripts/extract-pdf-solutions.js`) และหากต้นทางล่มจะใช้ seed ในตัว; `causes`/`solutions` ได้จาก PDF วิเคราะห์ (`src/data/risk-point-pdf-details.ts`)
+- **Bottlenecks (จุดทางคนเดินข้าม)** — จาก BMA Open Data ชุด `crosswalk_50` (50 เขต) ดึงตอน startup
 - **Ranking** — ดึงสดจากไฟล์ heat-map xlsx ของ BMA **ทุกครั้งที่เรียกใช้**
 
-> หมายเหตุ: ระบบพึ่ง external data source — หากออฟไลน์หรือต้นทางล่ม bottlenecks จะคืน `[]`, ranking จะ error, และ risk points จะถูกแทนด้วย seed ในตัว
+> หมายเหตุ: ระบบพึ่ง external data source — หากออฟไลน์หรือต้นทางล่ม bottlenecks จะคืน `[]`, `GET /api/risk-points/ranking` จะตอบ `500`, และ risk points จะถูกแทนด้วย seed ในตัว (การเริ่มระบบเองไม่ล้มเหลว)
 
 ## Requirements
 
@@ -17,17 +17,10 @@ Implementation of the uploaded **BKK Data Base API v0.2.0** contract without a d
 
 ## Install
 
-ติดตั้ง dependencies ทั้งหมดของโปรเจกต์:
+ติดตั้ง dependencies ทั้งหมดของโปรเจกต์ (รวม `xlsx` ที่ `RankingService`/`BottlenecksService` ใช้อ่านไฟล์จาก BMA Open Data):
 
 ```bash
-npm install
-```
-
-ติดตั้งระบบโหลดและอ่านไฟล์ xlsx ที่ใช้ดึงข้อมูลจาก BMA Open Data (`RankingService` และ `BottlenecksService`):
-
-```bash
-npm install xlsx @types/xlsx
-npm install axios
+npm ci
 ```
 
 ## Environment
@@ -61,7 +54,7 @@ Swagger:
 | `GET /api/risk-points` | `district`, `riskLevel` (`LOW`/`MEDIUM`/`HIGH`/`CRITICAL`) | list view ไม่มี `causes`/`solutions` |
 | `GET /api/risk-points/:riskPointId` | — | รายละเอียดครบรวม `causes`/`solutions`; `404` ถ้าไม่พบ |
 | `GET /api/risk-points/ranking` | `district`, `limit` (1–100, default 10) | ดึงสดจาก BMA heat-map xlsx ทุกครั้ง |
-| `GET /api/remediations` | `district`, `status` (`PENDING`/`IN_PROGRESS`/`COMPLETED`/`CANCELLED`) | 96 รายการ `RM-PDF-001…096`; ตัด `startedAt`/`dueAt` ออกจาก response |
+| `GET /api/remediations` | `district`, `status` (`PENDING`/`IN_PROGRESS`/`COMPLETED`/`CANCELLED`) | สูงสุด 96 รายการ `RM-PDF-001…` เมื่อ KML โหลดสำเร็จ (join ด้วยพิกัดในรัศมี 150 m); ออฟไลน์ (seed) จะมีแค่ 1 รายการ; ตัด `startedAt`/`dueAt` ออกจาก response |
 | `GET /api/bottlenecks` | `district` (บังคับ) | ข้อมูลจริง crosswalk_50, `CW-001…`; ว่างถ้าดึงข้อมูลไม่สำเร็จ; ไม่ส่ง `district` → `400` |
 | `POST /api/admin/imports` | Bearer; body `source` (enum), `datasetUrl`?, `note`? | จำลอง pipeline นำเข้าข้อมูล (ผล mock) |
 | `POST /api/admin/ranking/rebuild` | Bearer | re-fetch อันดับความเสี่ยงจาก BMA ใหม่ |
@@ -151,16 +144,24 @@ curl.exe -X POST "http://localhost:3000/api/admin/ranking/rebuild"
 ## Testing
 
 ```bash
-npm test    # jest — 4 suites / 34 tests
+npm test          # jest — unit tests: 5 suites / 34 tests
+npm run test:e2e  # full-app characterization test (test/app.e2e-spec.ts) — 19 tests, no real network calls
+npm run lint       # check only
+npm run lint:fix   # check and auto-fix
 ```
 
-Lint และ format (ESLint 9 + Prettier):
+## Project structure
 
-```bash
-npm run lint          # eslint --fix — แก้อัตโนมัติระหว่างพัฒนา
-npm run lint:check    # ตรวจอย่างเดียว ไม่แก้ไฟล์ — ใช้ใน CI
-npm run format        # prettier --write
-npm run format:check  # prettier --check — ใช้ใน CI
+โค้ดแยกตาม feature module แทนการรวมไว้ใน `common/`:
+
+```text
+src/
+  main.ts, app.module.ts, app.setup.ts   # bootstrap และ Nest app config ที่ e2e test ใช้ร่วมกัน
+  config/env.ts                          # โหลด .env และอ่าน ADMIN_MOCK_TOKEN / PORT
+  shared/                                # geo, omit, mapLimit, HTTP downloader + xlsx reader, guard
+  data-store/                            # RiskPointsRepository, RemediationsRepository, DataBootstrapService (แทน MockDataService เดิม)
+  risk-points/  remediation/  ranking/  bottlenecks/  admin/
+  data/                                  # ข้อมูลที่ extract จาก PDF ด้วยมือ — ห้ามแก้หรือรันสคริปต์ extract ทับ
 ```
 
-ตั้งค่าอยู่ใน `eslint.config.mjs`, `.prettierrc` และ `.prettierignore` — ไฟล์ข้อมูลที่ generate จาก PDF (`src/data/*-pdf-details.ts`) ถูกตัดออกจากการจัดรูปแบบอัตโนมัติ แต่ยังผ่านการตรวจ lint
+`src/common/models.ts` ที่ยังเหลืออยู่เป็นแค่ compatibility shim ให้ `src/data/risk-point-pdf-details.ts` (ไฟล์ที่ห้ามแก้) import `SourcedNote` ได้ตามเดิม

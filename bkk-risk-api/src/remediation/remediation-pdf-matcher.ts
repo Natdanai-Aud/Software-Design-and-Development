@@ -1,24 +1,10 @@
-import { Remediation, RiskPoint } from './models';
-import { RemediationStatus } from './enums';
+import { haversineMeters } from '../shared/geo';
+import { RiskPoint } from '../risk-points/risk-point.model';
 import { RemediationPdfDetails } from '../data/remediation-pdf-details';
+import { Remediation } from './remediation.model';
+import { RemediationStatus } from './remediation-status.enum';
 
 const MAX_MATCH_DISTANCE_METERS = 150;
-
-function haversineMeters(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
-  const R = 6371000;
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
 
 export function matchRiskPointByCoordinates(
   lat: number,

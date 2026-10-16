@@ -1,11 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { ImportResult } from '../common/models';
-import { CreateImportDto } from './dto/create-import.dto';
 import { RankingService } from '../ranking/ranking.service';
+import { RemediationService } from '../remediation/remediation.service';
+import { CreateImportDto } from './dto/create-import.dto';
+import { UpdateRemediationDto } from '../remediation/dto/update-remediation.dto';
+import { ImportResult } from './import-result.model';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly rankingService: RankingService) {}
+  constructor(
+    private readonly rankingService: RankingService,
+    private readonly remediationService: RemediationService,
+  ) {}
 
   createImport(dto: CreateImportDto): ImportResult {
     const startedAt = new Date().toISOString();
@@ -25,5 +30,9 @@ export class AdminService {
 
   rebuildRanking() {
     return this.rankingService.rebuild();
+  }
+
+  updateRemediation(remediationId: string, dto: UpdateRemediationDto) {
+    return this.remediationService.update(remediationId, dto);
   }
 }

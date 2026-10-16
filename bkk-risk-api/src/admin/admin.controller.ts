@@ -12,21 +12,17 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { MockAdminGuard } from '../common/guards/mock-admin.guard';
+import { MockAdminGuard } from '../shared/guards/mock-admin.guard';
 import { CreateImportDto } from './dto/create-import.dto';
 import { UpdateRemediationDto } from '../remediation/dto/update-remediation.dto';
 import { AdminService } from './admin.service';
-import { RemediationService } from '../remediation/remediation.service';
 
 @ApiTags('admin')
 @ApiBearerAuth('bearerAuth')
 @UseGuards(MockAdminGuard)
 @Controller('admin')
 export class AdminController {
-  constructor(
-    private readonly adminService: AdminService,
-    private readonly remediationService: RemediationService,
-  ) {}
+  constructor(private readonly adminService: AdminService) {}
 
   @Post('imports')
   @ApiOperation({
@@ -49,6 +45,6 @@ export class AdminController {
     @Param('remediationId') remediationId: string,
     @Body() dto: UpdateRemediationDto,
   ) {
-    return this.remediationService.update(remediationId, dto);
+    return this.adminService.updateRemediation(remediationId, dto);
   }
 }

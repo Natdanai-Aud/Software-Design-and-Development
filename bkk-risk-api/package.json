@@ -11,7 +11,8 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint \"{src,test}/**/*.ts\" --fix",
+    "lint": "eslint \"{src,test}/**/*.ts\"",
+    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -34,7 +35,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@eslint/js": "^9.34.0",
+    "@eslint/js": "^9.39.5",
     "@nestjs/cli": "^11.0.24",
     "@nestjs/schematics": "^11.0.5",
     "@nestjs/testing": "^11.1.6",
@@ -42,8 +43,8 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^24.3.0",
     "@types/supertest": "^6.0.3",
-    "eslint": "^9.34.0",
-    "globals": "^16.4.0",
+    "eslint": "^9.39.5",
+    "globals": "^17.12.0",
     "jest": "^30.0.5",
     "prettier": "^3.6.2",
     "source-map-support": "^0.5.21",
@@ -53,6 +54,6 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.42.0"
+    "typescript-eslint": "^8.70.1"
   }
 }

@@ -1,63 +1,48 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import axios from 'axios';
-import * as XLSX from 'xlsx';
+import { fetchArrayBuffer } from '../shared/http/downloader';
+import { parseXlsxRows } from '../shared/http/xlsx-reader';
+import { RankingRow, RankingSourceRow } from './ranking-row.model';
 
-interface ExcelRow {
-  no?: number | string;
-  location?: string;
-  district?: string;
-  police_station?: string;
-  lat?: number | string;
-  long?: number | string;
-  res_agency?: string;
-}
+const HEAT_MAP_XLSX_URL =
+  'https://data.bangkok.go.th/dataset/820fa433-cdc4-4e2f-b8c7-a6c40546a5d8/resource/6cc7a43f-52b3-4381-9a8f-2b8a35c3174a/download/-heat-map-9-11-65.xlsx';
+
+const FETCH_TIMEOUT_MS = 20_000;
 
 @Injectable()
 export class RankingService {
-  private readonly fileUrl =
-    'https://data.bangkok.go.th/dataset/820fa433-cdc4-4e2f-b8c7-a6c40546a5d8/resource/6cc7a43f-52b3-4381-9a8f-2b8a35c3174a/download/-heat-map-9-11-65.xlsx';
-
   async getRiskRanking() {
-    try {
-      const response = await axios.get(this.fileUrl, {
-        responseType: 'arraybuffer',
-      });
+    const result = await fetchArrayBuffer(HEAT_MAP_XLSX_URL, FETCH_TIMEOUT_MS);
 
-      const workbook = XLSX.read(response.data, {
-        type: 'buffer',
-      });
-
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-
-      const rows = XLSX.utils.sheet_to_json<ExcelRow>(worksheet, {
-        defval: null,
-      });
-
-      const data = rows.map((row) => ({
-        rank: Number(row.no),
-        location: row.location,
-        district: row.district,
-        policeStation: row.police_station,
-        lat: Number(row.lat),
-        lng: Number(row.long),
-        responsibleAgency: row.res_agency,
-      }));
-
-      return {
-        total: data.length,
-        data,
-      };
-    } catch (error) {
+    if (!result.ok) {
       throw new InternalServerErrorException(
         'Failed to load risk data from BMA Open Data',
-        { cause: error },
+        {
+          cause:
+            result.errorMessage ?? `HTTP ${result.status} ${result.statusText}`,
+        },
       );
     }
+
+    const rows = parseXlsxRows<RankingSourceRow>(result.buffer as Buffer);
+
+    const data: RankingRow[] = rows.map((row) => ({
+      rank: Number(row.no),
+      location: row.location,
+      district: row.district,
+      policeStation: row.police_station,
+      lat: Number(row.lat),
+      lng: Number(row.long),
+      responsibleAgency: row.res_agency,
+    }));
+
+    return {
+      total: data.length,
+      data,
+    };
   }
 
   async rebuild() {
-    return await this.getRiskRanking();
+    return this.getRiskRanking();
   }
 
   async findTop(district?: string, limit?: number) {

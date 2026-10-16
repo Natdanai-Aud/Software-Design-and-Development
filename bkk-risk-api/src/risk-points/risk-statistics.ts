@@ -1,4 +1,4 @@
-import { RiskLevel } from './enums';
+import { RiskLevel } from './risk-level.enum';
 
 export interface RiskStatistics {
   accidentCount: number;

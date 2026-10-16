@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { RiskLevel } from '../../common/enums';
+import { RiskLevel } from '../risk-level.enum';
 
 export class FindRiskPointsDto {
   @ApiPropertyOptional({ example: 'จตุจักร' })

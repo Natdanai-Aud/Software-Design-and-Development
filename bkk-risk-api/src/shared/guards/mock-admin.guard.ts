@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { getAdminMockToken } from '../../config/env';
 
 @Injectable()
 export class MockAdminGuard implements CanActivate {
@@ -17,7 +18,7 @@ export class MockAdminGuard implements CanActivate {
     }
 
     const token = auth.substring('Bearer '.length).trim();
-    const expected = process.env.ADMIN_MOCK_TOKEN;
+    const expected = getAdminMockToken();
 
     if (!expected) {
       throw new UnauthorizedException(

@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
-import { RemediationStatus } from '../../common/enums';
+import { RemediationStatus } from '../remediation-status.enum';
 
 export class UpdateRemediationDto {
   @ApiPropertyOptional({ enum: RemediationStatus })

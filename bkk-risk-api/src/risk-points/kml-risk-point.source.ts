@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { XMLParser } from 'fast-xml-parser';
-import { RiskPoint } from './models';
+import { fetchText } from '../shared/http/downloader';
+import { RiskPoint } from './risk-point.model';
 import { deriveRiskStatistics } from './risk-statistics';
 
 export const GOOGLE_MAPS_KML_URL =
@@ -26,52 +27,42 @@ export class KmlRiskPointSource {
   private readonly parser = new XMLParser({ ignoreAttributes: false });
 
   async fetchRiskPoints(): Promise<RiskPoint[] | null> {
-    try {
-      const response = await fetch(GOOGLE_MAPS_KML_URL, {
-        signal: AbortSignal.timeout(KML_FETCH_TIMEOUT_MS),
-      });
+    const result = await fetchText(GOOGLE_MAPS_KML_URL, KML_FETCH_TIMEOUT_MS);
 
-      if (!response.ok) {
-        this.logger.warn(
-          `KML fetch failed with status ${response.status} ${response.statusText}`,
-        );
-        return null;
-      }
-
-      const xml = await response.text();
-      const points = this.parseKml(xml);
-
-      if (points.length > 0) {
-        this.logger.log(
-          `Loaded ${points.length} risk points from Google My Maps`,
-        );
+    if (!result.ok) {
+      if (result.errorMessage) {
+        this.logger.warn(`KML fetch failed: ${result.errorMessage}`);
       } else {
-        this.logger.warn('KML contained no point placemarks');
+        this.logger.warn(
+          `KML fetch failed with status ${result.status} ${result.statusText}`,
+        );
       }
-
-      return points;
-    } catch (error) {
-      this.logger.warn(`KML fetch failed: ${(error as Error).message}`);
       return null;
     }
+
+    const points = this.parseKml(result.text as string);
+
+    if (points.length > 0) {
+      this.logger.log(
+        `Loaded ${points.length} risk points from Google My Maps`,
+      );
+    } else {
+      this.logger.warn('KML contained no point placemarks');
+    }
+
+    return points;
   }
 
   parseKml(xml: string): RiskPoint[] {
-    const document: unknown = this.parser.parse(xml);
-    const placemarks = this.collectPlacemarks(
-      this.pick(this.pick(document, 'kml'), 'Document'),
-    );
+    const parsed: unknown = this.parser.parse(xml);
+    const documentNode = (
+      parsed as { kml?: { Document?: unknown } } | null | undefined
+    )?.kml?.Document;
+    const placemarks = this.collectPlacemarks(documentNode);
 
     return placemarks
       .map((placemark, index) => this.mapPlacemark(placemark, index))
       .filter((point): point is RiskPoint => point !== null);
-  }
-
-  private pick(value: unknown, key: string): unknown {
-    if (!value || typeof value !== 'object') {
-      return undefined;
-    }
-    return (value as Record<string, unknown>)[key];
   }
 
   private collectPlacemarks(node: unknown): KmlPlacemark[] {

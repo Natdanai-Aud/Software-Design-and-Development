@@ -2,8 +2,9 @@ import {
   buildRemediationsFromPdfDetails,
   matchRiskPointByCoordinates,
 } from './remediation-pdf-matcher';
-import { RiskLevel, RemediationStatus } from './enums';
-import { RiskPoint } from './models';
+import { RemediationStatus } from './remediation-status.enum';
+import { RiskLevel } from '../risk-points/risk-level.enum';
+import { RiskPoint } from '../risk-points/risk-point.model';
 import { RemediationPdfDetails } from '../data/remediation-pdf-details';
 
 function makeRiskPoint(overrides: Partial<RiskPoint>): RiskPoint {

@@ -1,7 +1,9 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import axios from 'axios';
-import * as XLSX from 'xlsx';
-import { Bottleneck } from '../common/models';
+import { fetchArrayBuffer } from '../shared/http/downloader';
+import { parseXlsxRows } from '../shared/http/xlsx-reader';
+import { mapLimit } from '../shared/map-limit';
+import { Bottleneck } from './bottleneck.model';
+import { parseCrosswalkRows } from './crosswalk-row.mapper';
 
 /**
  * BMA Open Data dataset "crosswalk_50" (ข้อมูลทางคนเดินข้ามในพื้นที่กรุงเทพมหานคร)
@@ -74,15 +76,11 @@ export class BottlenecksService implements OnModuleInit {
 
   async onModuleInit() {
     const crosswalks = await this.fetchBottlenecks();
-    if (crosswalks) {
-      this._bottlenecks = crosswalks;
-    } else {
-      this._bottlenecks = [];
-    }
+    this._bottlenecks = crosswalks ?? [];
   }
 
   async fetchBottlenecks(): Promise<Bottleneck[] | null> {
-    const results = await this.mapLimit(
+    const results = await mapLimit(
       CROSSWALK_RESOURCE_IDS,
       CONCURRENCY,
       (resourceId) => this.fetchOne(resourceId),
@@ -109,9 +107,7 @@ export class BottlenecksService implements OnModuleInit {
   }
 
   parseRows(rows: Record<string, unknown>[]): Bottleneck[] {
-    return rows
-      .map((row) => this.mapRow(row))
-      .filter((item): item is Bottleneck => item !== null);
+    return parseCrosswalkRows(rows);
   }
 
   findAll(district: string): Bottleneck[] {
@@ -120,131 +116,21 @@ export class BottlenecksService implements OnModuleInit {
 
   private async fetchOne(resourceId: string): Promise<Bottleneck[] | null> {
     const url = `https://data.bangkok.go.th/dataset/${CROSSWALK_DATASET_ID}/resource/${resourceId}/download/crosswalk.xlsx`;
-    try {
-      const response = await axios.get<ArrayBuffer>(url, {
-        responseType: 'arraybuffer',
-        timeout: FETCH_TIMEOUT_MS,
-      });
+    const result = await fetchArrayBuffer(url, FETCH_TIMEOUT_MS);
 
-      const workbook = XLSX.read(response.data, { type: 'buffer' });
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(
-        worksheet,
-        { defval: null },
-      );
-
-      return this.parseRows(rows);
-    } catch (error) {
+    if (!result.ok) {
+      const reason =
+        result.errorMessage ??
+        `Request failed with status code ${result.status}`;
       this.logger.warn(
-        `Crosswalk xlsx fetch failed [${resourceId}]: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `Crosswalk xlsx fetch failed [${resourceId}]: ${reason}`,
       );
       return null;
     }
-  }
 
-  private mapRow(row: Record<string, unknown>): Bottleneck | null {
-    const fields = new Map<string, unknown>();
-
-    for (const [key, value] of Object.entries(row)) {
-      const normalized = KEY_ALIASES[normalizeKey(key)];
-      if (normalized && value !== null && value !== undefined && value !== '') {
-        fields.set(normalized, value);
-      }
-    }
-
-    const lat = Number(fields.get('lat'));
-    const lng = Number(fields.get('lng'));
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      return null;
-    }
-
-    const location = this.toText(fields.get('location'));
-    const road = this.toText(fields.get('road'));
-
-    return {
-      bottleneckId: '',
-      nameTh: location || road || 'ทางคนเดินข้าม',
-      district: this.toText(fields.get('district')),
-      road: road || undefined,
-      lat,
-      lng,
-      crossMarking: this.stringOrNull(fields.get('crossMarking')),
-      cType: this.stringOrNull(fields.get('cType')),
-      numLane: this.numberOrNull(fields.get('numLane')),
-    };
-  }
-
-  private toText(value: unknown): string {
-    switch (typeof value) {
-      case 'string':
-        return value.trim();
-      case 'number':
-        return Number.isFinite(value) ? String(value) : '';
-      case 'boolean':
-        return value ? 'true' : 'false';
-      case 'object':
-        return value instanceof Date ? value.toISOString() : '';
-      default:
-        return '';
-    }
-  }
-
-  private stringOrNull(value: unknown): string | null {
-    const text = this.toText(value);
-    return text ? text : null;
-  }
-
-  private numberOrNull(value: unknown): number | null {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  private async mapLimit<T, R>(
-    items: T[],
-    limit: number,
-    fn: (item: T) => Promise<R>,
-  ): Promise<R[]> {
-    const results: R[] = new Array<R>(items.length);
-    let cursor = 0;
-
-    const worker = async () => {
-      while (true) {
-        const index = cursor;
-        cursor += 1;
-        if (index >= items.length) break;
-        results[index] = await fn(items[index]);
-      }
-    };
-
-    const workers = Array.from({ length: Math.min(limit, items.length) }, () =>
-      worker(),
+    const rows = parseXlsxRows<Record<string, unknown>>(
+      result.buffer as Buffer,
     );
-    await Promise.all(workers);
-    return results;
+    return this.parseRows(rows);
   }
 }
-
-function normalizeKey(key: string): string {
-  return String(key ?? '')
-    .replace(/^\uFEFF/, '')
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_-]+/g, '');
-}
-
-const KEY_ALIASES: Record<string, string> = {
-  lat: 'lat',
-  latitude: 'lat',
-  long: 'lng',
-  longitude: 'lng',
-  lng: 'lng',
-  district: 'district',
-  road: 'road',
-  location: 'location',
-  ctype: 'cType',
-  crossmarking: 'crossMarking',
-  numlane: 'numLane',
-};

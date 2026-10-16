@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString, IsUrl } from 'class-validator';
-import { ImportSource } from '../../common/enums';
+import { ImportSource } from '../import-source.enum';
 
 export class CreateImportDto {
   @ApiProperty({ enum: ImportSource, example: ImportSource.THAIRSC })

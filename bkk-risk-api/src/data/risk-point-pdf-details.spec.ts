@@ -1,8 +1,13 @@
-import { riskPointPdfDetails, withPdfDetails } from './risk-point-pdf-details';
+import {
+  riskPointPdfDetails,
+  withPdfDetails,
+} from './risk-point-pdf-details';
 
 describe('riskPointPdfDetails', () => {
   it('covers every rank from 1 to 100 exactly once', () => {
-    expect(normalizeRanks(riskPointPdfDetails)).toEqual(range(1, 100));
+    expect(normalizeRanks(riskPointPdfDetails)).toEqual(
+      range(1, 100),
+    );
   });
 
   it('gives every entry at least one cause item sourced from the same PDF', () => {
@@ -17,7 +22,8 @@ describe('riskPointPdfDetails', () => {
 
   it('maps each entry to the PDF file that covers its rank', () => {
     const sourceFor = (rank: number) =>
-      riskPointPdfDetails.find((e) => e.clusterRank === rank)?.sourceDocument;
+      riskPointPdfDetails.find((e) => e.clusterRank === rank)
+        ?.sourceDocument;
 
     expect(sourceFor(1)).toBe('660628-solutions-1-20.pdf');
     expect(sourceFor(20)).toBe('660628-solutions-1-20.pdf');
@@ -105,8 +111,12 @@ describe('withPdfDetails', () => {
   });
 });
 
-function normalizeRanks(entries: Array<{ clusterRank: number }>): number[] {
-  return entries.map((e) => e.clusterRank).sort((a, b) => a - b);
+function normalizeRanks(
+  entries: Array<{ clusterRank: number }>,
+): number[] {
+  return entries
+    .map((e) => e.clusterRank)
+    .sort((a, b) => a - b);
 }
 
 function range(from: number, to: number): number[] {
