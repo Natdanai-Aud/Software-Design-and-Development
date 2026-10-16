@@ -54,8 +54,11 @@ export class KmlRiskPointSource {
   }
 
   parseKml(xml: string): RiskPoint[] {
-    const document = this.parser.parse(xml);
-    const placemarks = this.collectPlacemarks(document?.kml?.Document);
+    const parsed: unknown = this.parser.parse(xml);
+    const documentNode = (
+      parsed as { kml?: { Document?: unknown } } | null | undefined
+    )?.kml?.Document;
+    const placemarks = this.collectPlacemarks(documentNode);
 
     return placemarks
       .map((placemark, index) => this.mapPlacemark(placemark, index))
