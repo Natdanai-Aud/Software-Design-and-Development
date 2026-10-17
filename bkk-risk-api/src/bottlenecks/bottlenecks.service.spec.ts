@@ -2,6 +2,27 @@ import {
   CROSSWALK_RESOURCE_IDS,
   BottlenecksService,
 } from './bottlenecks.service';
+import { fetchArrayBuffer } from '../shared/http/downloader';
+import * as XLSX from 'xlsx';
+
+jest.mock('../shared/http/downloader', () => ({
+  fetchArrayBuffer: jest.fn(),
+}));
+
+const fetchArrayBufferMock = fetchArrayBuffer as jest.Mock;
+
+function makeCrosswalkBuffer(district: string, location: string): Buffer {
+  const worksheet = XLSX.utils.json_to_sheet([
+    { District: district, location, Lat: 13.8, Long: 100.58 },
+  ]);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
+  const bytes: Uint8Array = XLSX.write(workbook, {
+    type: 'buffer',
+    bookType: 'xlsx',
+  });
+  return Buffer.from(bytes);
+}
 
 describe('BottlenecksService', () => {
   const service = new BottlenecksService();
@@ -139,6 +160,75 @@ describe('BottlenecksService', () => {
       expect(item.crossMarking).toBeNull();
       expect(item.cType).toBeNull();
       expect(item.numLane).toBeNull();
+    });
+  });
+
+  describe('fetchBottlenecks', () => {
+    beforeEach(() => {
+      fetchArrayBufferMock.mockReset();
+    });
+
+    it('returns null when every download fails with an error message', async () => {
+      fetchArrayBufferMock.mockResolvedValue({
+        ok: false,
+        errorMessage: 'network down',
+      });
+
+      await expect(service.fetchBottlenecks()).resolves.toBeNull();
+      expect(fetchArrayBufferMock).toHaveBeenCalledTimes(
+        CROSSWALK_RESOURCE_IDS.length,
+      );
+    });
+
+    it('returns null when every download fails with an HTTP status', async () => {
+      fetchArrayBufferMock.mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Server Error',
+      });
+
+      await expect(service.fetchBottlenecks()).resolves.toBeNull();
+    });
+
+    it('merges partial successes and numbers them CW-001..', async () => {
+      fetchArrayBufferMock.mockImplementation((url: string) =>
+        url.includes(CROSSWALK_RESOURCE_IDS[0])
+          ? {
+              ok: true,
+              buffer: makeCrosswalkBuffer('ห้วยขวาง', 'จุดที่หนึ่ง'),
+            }
+          : { ok: false, status: 404, statusText: 'Not Found' },
+      );
+
+      const items = await service.fetchBottlenecks();
+
+      expect(items).toHaveLength(1);
+      expect(items?.[0]).toMatchObject({
+        bottleneckId: 'CW-001',
+        district: 'ห้วยขวาง',
+        nameTh: 'จุดที่หนึ่ง',
+      });
+    });
+
+    it('caches merged bottlenecks on init so findAll filters by district', async () => {
+      fetchArrayBufferMock.mockImplementation((url: string) =>
+        url.includes(CROSSWALK_RESOURCE_IDS[0])
+          ? {
+              ok: true,
+              buffer: makeCrosswalkBuffer('ห้วยขวาง', 'จุดที่หนึ่ง'),
+            }
+          : {
+              ok: true,
+              buffer: makeCrosswalkBuffer('ปทุมวัน', 'จุดที่สอง'),
+            },
+      );
+
+      await service.onModuleInit();
+
+      const huaiKhwang = service.findAll('ห้วยขวาง');
+      expect(huaiKhwang).toHaveLength(1);
+      expect(huaiKhwang[0].bottleneckId).toBe('CW-001');
+      expect(service.findAll('ไม่มีเขตนี้')).toEqual([]);
     });
   });
 });
