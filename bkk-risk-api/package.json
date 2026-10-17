@@ -16,7 +16,9 @@
     "lint:check": "eslint \"{src,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:coverage": "jest --coverage",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "sonar": "sonar-scanner"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",
@@ -48,6 +50,7 @@
     "jest": "^30.0.5",
     "prettier": "^3.6.2",
     "source-map-support": "^0.5.21",
+    "sonarqube-scanner": "^4.2.1",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.1",
     "ts-loader": "^9.5.4",

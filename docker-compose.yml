@@ -6,3 +6,40 @@ services:
       - "3000:3000"
     env_file: .env
     restart: unless-stopped
+
+  # --- SonarQube (local test) ---
+  # หมายเหตุ: ถ้าเครื่องมี sonarqube/postgres รันอยู่แล้ว ให้หยุดตัวเก่าก่อน
+  # หรือเปลี่ยน container_name/ports กันชน แล้วค่อย up ตัวนี้
+  sonar-db:
+    image: postgres:15
+    container_name: bkk-sonar-db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonar
+      POSTGRES_DB: sonar
+    volumes:
+      - sonar_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: bkk-sonarqube
+    depends_on:
+      - sonar-db
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    restart: unless-stopped
+
+volumes:
+  sonar_db_data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
